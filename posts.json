@@ -15,9 +15,27 @@
     {
       "name": "HR & Welfare",
       "color": "#00897b"
+    },
+    {
+      "name": "Corporate Philosophy",
+      "color": "#c9a461"
+    },
+    {
+      "name": "QCC",
+      "color": "#c21aff"
     }
   ],
   "posts": [
+    {
+      "id": 1793343751146,
+      "title": "ด่วนสำหรับ 3 ทีมแรก ส่งเอกสาร QCC ครับถ่วน รับรางวัลทีมละ 1,000 บาท",
+      "category": "QCC",
+      "description": "",
+      "image": "./posters/poster_1793343674738.jpg",
+      "orientation": "landscape",
+      "views": 1,
+      "date": "2026-10-30T07:02:31.146Z"
+    },
     {
       "id": 1793342823143,
       "title": "Vision&Mission",
@@ -25,7 +43,7 @@
       "description": "",
       "image": "./posters/poster_1793342521891.jpg",
       "orientation": "landscape",
-      "views": 1,
+      "views": 3,
       "date": "2026-10-30T06:47:03.143Z"
     },
     {
