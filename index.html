@@ -209,7 +209,7 @@
 
           <v-card v-else class="pa-12 text-center rounded-xl" elevation="0" color="transparent">
             <v-icon icon="mdi-image-off-outline" size="72" color="#001941" class="mb-3 opacity-50"></v-icon>
-            <div class="text-h6 font-weight-bold" style="color: #001941;"> </div>
+            <div class="text-h6 font-weight-bold" style="color: #001941;">ไม่พบโปสเตอร์ในหมวดหมู่นี้</div>
           </v-card>
         </v-container>
       </v-main>
@@ -292,7 +292,6 @@
                 <v-btn color="#001941" variant="flat" size="small" prepend-icon="mdi-download" class="text-none text-white px-4" :href="activePost.image" :download="activePost.title + '.jpg'" target="_blank">
                   ดาวน์โหลด .JPG
                 </v-btn>
-                <!-- ปุ่มเปิดหน้าแก้ไข (ต้องใส่รหัสผ่านก่อน) -->
                 <v-btn v-if="isAuthenticated" color="amber-darken-3" variant="tonal" size="small" prepend-icon="mdi-pencil-outline" class="text-none" @click="openEditDialog(activePost)">
                   แก้ไขโพสต์
                 </v-btn>
@@ -324,7 +323,7 @@
         </v-card>
       </v-dialog>
 
-      <!-- 4. DIALOG ฟอร์มลงโพสต์ใหม่ / แก้ไขโพสต์เดิม (มีปุ่มลบด้านใน) -->
+      <!-- 4. DIALOG ฟอร์มลงโพสต์ใหม่ / แก้ไขโพสต์เดิม -->
       <v-dialog v-model="postDialog" max-width="700" persistent>
         <v-card class="rounded-xl">
           <v-toolbar color="#001941" density="comfortable" class="px-2">
@@ -336,7 +335,7 @@
           </v-toolbar>
 
           <v-card-text class="pa-6" style="max-height: 80vh; overflow-y: auto;">
-            <!-- ตั้งค่า GitHub API (เฉพาะตอนสร้างใหม่หรือต้องการตั้งค่า) -->
+            <!-- ตั้งค่า GitHub API -->
             <v-expansion-panels class="mb-4" v-if="!isEditing">
               <v-expansion-panel elevation="0" style="border: 1px solid #cbd5e1; border-radius: 10px;">
                 <v-expansion-panel-title class="text-caption font-weight-bold" style="color: #001941;">
@@ -372,9 +371,9 @@
               variant="outlined" density="comfortable" class="mb-2"
             ></v-text-field>
 
-            <!-- เลือกหมวดหมู่ -->
+            <!-- เลือกหมวดหมู่ และปุ่มจัดการหมวดหมู่ -->
             <v-row align="center" class="mb-2">
-              <v-col cols="12" sm="8">
+              <v-col cols="12" sm="7">
                 <v-select
                   v-model="newPost.category" :items="categories" item-title="name" item-value="name"
                   label="เลือกหมวดหมู่ *" variant="outlined" density="comfortable" hide-details
@@ -384,9 +383,14 @@
                   </template>
                 </v-select>
               </v-col>
-              <v-col cols="12" sm="4">
-                <v-btn color="#001941" variant="outlined" block class="text-none" prepend-icon="mdi-palette-outline" @click="showNewCategoryBox = !showNewCategoryBox">
-                  + เพิ่มหมวดหมู่/สี
+              <v-col cols="6" sm="2">
+                <v-btn color="#001941" variant="outlined" block class="text-none px-0" prepend-icon="mdi-plus" @click="showNewCategoryBox = !showNewCategoryBox">
+                  เพิ่ม
+                </v-btn>
+              </v-col>
+              <v-col cols="6" sm="3">
+                <v-btn color="grey-darken-2" variant="tonal" block class="text-none px-0" prepend-icon="mdi-format-list-bulleted" @click="manageCategoryDialog = true">
+                  จัดการหมวดหมู่
                 </v-btn>
               </v-col>
             </v-row>
@@ -436,7 +440,6 @@
           </v-card-text>
 
           <v-card-actions class="px-6 pb-5 pt-0 justify-space-between">
-            <!-- ปุ่มลบโพสต์ (แสดงเฉพาะตอนอยู่ในโหมดแก้ไข) -->
             <div>
               <v-btn v-if="isEditing" color="error" variant="elevated" size="small" class="text-none" prepend-icon="mdi-delete" @click="deletePost(newPost.id)">
                 ลบโพสต์นี้
@@ -451,6 +454,33 @@
                 {{ isEditing ? 'บันทึกการแก้ไข' : 'บันทึกและโพสต์' }}
               </v-btn>
             </div>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- 5. DIALOG จัดการ/ลบหมวดหมู่ -->
+      <v-dialog v-model="manageCategoryDialog" max-width="500">
+        <v-card class="rounded-xl pa-4">
+          <div class="d-flex align-center justify-between mb-4">
+            <h3 class="text-h6 font-weight-bold" style="color: #001941;">จัดการหมวดหมู่ทั้งหมด</h3>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="manageCategoryDialog = false"></v-btn>
+          </div>
+
+          <v-list density="compact" class="mb-4" style="max-height: 300px; overflow-y: auto;">
+            <v-list-item v-for="(cat, index) in categories" :key="cat.name" class="border-b py-2">
+              <template v-slot:prepend>
+                <v-icon icon="mdi-circle" :color="cat.color" class="mr-3"></v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">{{ cat.name }}</v-list-item-title>
+              <template v-slot:append>
+                <span class="text-caption text-grey mr-3">({{ getCategoryCount(cat.name) }} โพสต์)</span>
+                <v-btn icon="mdi-delete-outline" color="error" variant="text" size="small" @click="deleteCategory(index)"></v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+
+          <v-card-actions class="justify-end px-0">
+            <v-btn color="#001941" variant="elevated" block class="text-none text-white" @click="manageCategoryDialog = false">ปิดหน้าต่าง</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -472,12 +502,12 @@
     createApp({
       data() {
         return {
-          ADMIN_PIN: '1234', // รหัสผ่านผู้ดูแล
+          ADMIN_PIN: '1234',
           isAuthenticated: false,
           authDialog: false,
           passwordInput: '',
           authError: '',
-          authActionType: 'create', // 'create' หรือ 'edit'
+          authActionType: 'create',
 
           ghConfig: { owner: '', repo: '', branch: 'main', token: '' },
 
@@ -487,6 +517,7 @@
           activePost: null,
 
           postDialog: false,
+          manageCategoryDialog: false,
           isEditing: false,
           isSaving: false,
           showNewCategoryBox: false,
@@ -734,7 +765,6 @@
             }
 
             if (this.isEditing) {
-              // โหมดแก้ไขโพสต์เดิม
               const idx = this.posts.findIndex(p => p.id === this.newPost.id);
               if (idx !== -1) {
                 this.posts[idx].title = this.newPost.title.trim();
@@ -745,7 +775,6 @@
               }
               this.showToast('แก้ไขโพสต์เรียบร้อยแล้ว');
             } else {
-              // โหมดสร้างโพสต์ใหม่
               const postData = {
                 id: Date.now(),
                 title: this.newPost.title.trim(),
@@ -760,7 +789,6 @@
               this.showToast('บันทึกโพสต์ใหม่เรียบร้อยแล้ว');
             }
 
-            // ซิงค์ข้อมูลขึ้น GitHub หรือ LocalStorage
             if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
               const dbJson = JSON.stringify({ categories: this.categories, posts: this.posts }, null, 2);
               const dbBase64 = btoa(unescape(encodeURIComponent(dbJson)));
@@ -792,6 +820,44 @@
           this.closePostDialog();
           this.detailDialog = false;
           this.showToast('ลบเรียบร้อยแล้ว', 'error');
+        },
+
+        addCustomCategory() {
+          const name = this.newCategory.name.trim();
+          if (!name) return;
+          if (!this.categories.some(c => c.name === name)) {
+            this.categories.push({ name, color: this.newCategory.color });
+            localStorage.setItem('pr_poster_categories_v2', JSON.stringify(this.categories));
+            this.showToast(`เพิ่มหมวดหมู่ "${name}" สำเร็จ`);
+          }
+          this.newPost.category = name;
+          this.newCategory.name = '';
+          this.showNewCategoryBox = false;
+        },
+
+        deleteCategory(index) {
+          const catName = this.categories[index].name;
+          const count = this.getCategoryCount(catName);
+          if (count > 0) {
+            alert(`ไม่สามารถลบหมวดหมู่ "${catName}" ได้ เนื่องจากมีโปสเตอร์ใช้งานอยู่ ${count} โพสต์`);
+            return;
+          }
+          if (this.categories.length <= 1) {
+            alert('ต้องมีหมวดหมู่เหลืออย่างน้อย 1 หมวดหมู่');
+            return;
+          }
+          if (!confirm(`ยืนยันการลบหมวดหมู่ "${catName}"?`)) return;
+
+          this.categories.splice(index, 1);
+          localStorage.setItem('pr_poster_categories_v2', JSON.stringify(this.categories));
+          
+          if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
+            const dbJson = JSON.stringify({ categories: this.categories, posts: this.posts }, null, 2);
+            const dbBase64 = btoa(unescape(encodeURIComponent(dbJson)));
+            this.uploadFileToGitHub('posts.json', dbBase64, `Delete category: ${catName}`).catch(console.error);
+          }
+
+          this.showToast('ลบหมวดหมู่เรียบร้อยแล้ว', 'error');
         },
 
         exportJsonFile() {
@@ -838,17 +904,6 @@
         openDetailFromPopup(post) {
           this.latestPopup = false;
           this.openDetail(post);
-        },
-        addCustomCategory() {
-          const name = this.newCategory.name.trim();
-          if (!name) return;
-          if (!this.categories.some(c => c.name === name)) {
-            this.categories.push({ name, color: this.newCategory.color });
-            localStorage.setItem('pr_poster_categories_v2', JSON.stringify(this.categories));
-          }
-          this.newPost.category = name;
-          this.newCategory.name = '';
-          this.showNewCategoryBox = false;
         },
         closePostDialog() {
           this.postDialog = this.isEditing = false;
