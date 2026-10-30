@@ -122,7 +122,7 @@
       <!-- Top Bar -->
       <v-app-bar color="#001941" elevation="3">
         <v-container class="d-flex align-center py-0">
-         <img src="./logo.png" alt="Logo" style="height: 38px; width: auto; border-radius: 6px;" class="mr-3" />
+          <img src="./logo.png" alt="Logo" style="height: 38px; width: auto; border-radius: 6px;" class="mr-3" />
           <v-app-bar-title class="font-weight-bold text-h6 text-white">
             Boonrawd Asia Beverage Co., Ltd.
             <span class="text-caption font-weight-light d-none d-sm-inline ml-2 text-grey-lighten-2">
@@ -262,7 +262,7 @@
         </v-card>
       </v-dialog>
 
-      <!-- 2. DIALOG ดูรายละเอียดโพสต์ -->
+      <!-- 2. DIALOG ดูรายละเอียดโพสต์ (มีปุ่มแก้ไข) -->
       <v-dialog v-model="detailDialog" max-width="920">
         <v-card v-if="activePost" class="rounded-xl overflow-hidden">
           <v-toolbar color="#001941" density="compact">
@@ -292,21 +292,25 @@
                 <v-btn color="#001941" variant="flat" size="small" prepend-icon="mdi-download" class="text-none text-white px-4" :href="activePost.image" :download="activePost.title + '.jpg'" target="_blank">
                   ดาวน์โหลด .JPG
                 </v-btn>
+                <!-- ปุ่มเปิดหน้าแก้ไข (ต้องใส่รหัสผ่านก่อน) -->
+                <v-btn v-if="isAuthenticated" color="amber-darken-3" variant="tonal" size="small" prepend-icon="mdi-pencil-outline" class="text-none" @click="openEditDialog(activePost)">
+                  แก้ไขโพสต์
+                </v-btn>
               </div>
             </v-col>
           </v-row>
         </v-card>
       </v-dialog>
 
-      <!-- 3. DIALOG ใส่รหัสผ่านก่อนโพสต์ -->
+      <!-- 3. DIALOG ใส่รหัสผ่านก่อนโพสต์/แก้ไข -->
       <v-dialog v-model="authDialog" max-width="380">
         <v-card class="rounded-xl pa-5">
           <div class="text-center mb-4">
             <v-avatar color="#001941" size="56" class="mb-3">
               <v-icon icon="mdi-lock-check-outline" size="30" color="white"></v-icon>
             </v-avatar>
-            <h3 class="text-h6 font-weight-bold" style="color: #001941;">ใส่รหัสผ่านเพื่อลงโพสต์</h3>
-            <p class="text-caption text-grey-darken-1">เฉพาะผู้ดูแลที่มีรหัสผ่านเท่านั้นที่สามารถอัปโหลดได้</p>
+            <h3 class="text-h6 font-weight-bold" style="color: #001941;">ใส่รหัสผ่านเพื่อจัดการระบบ</h3>
+            <p class="text-caption text-grey-darken-1">เฉพาะผู้ดูแลที่มีรหัสผ่านเท่านั้น</p>
           </div>
           <v-text-field
             v-model="passwordInput" label="รหัสผ่าน (PIN)" type="password" variant="outlined"
@@ -320,19 +324,21 @@
         </v-card>
       </v-dialog>
 
-      <!-- 4. DIALOG ฟอร์มลงโพสต์ & อัปโหลดเข้า GitHub -->
+      <!-- 4. DIALOG ฟอร์มลงโพสต์ใหม่ / แก้ไขโพสต์เดิม (มีปุ่มลบด้านใน) -->
       <v-dialog v-model="postDialog" max-width="700" persistent>
         <v-card class="rounded-xl">
           <v-toolbar color="#001941" density="comfortable" class="px-2">
-            <v-icon icon="mdi-github" color="white" class="mr-2"></v-icon>
-            <v-toolbar-title class="font-weight-bold text-white text-subtitle-1">ลงประกาศโปสเตอร์ใหม่ (GitHub Storage)</v-toolbar-title>
+            <v-icon :icon="isEditing ? 'mdi-pencil' : 'mdi-github'" color="white" class="mr-2"></v-icon>
+            <v-toolbar-title class="font-weight-bold text-white text-subtitle-1">
+              {{ isEditing ? 'แก้ไขข้อมูลโปสเตอร์' : 'ลงประกาศโปสเตอร์ใหม่ (GitHub Storage)' }}
+            </v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon="mdi-close" variant="text" color="white" @click="closePostDialog"></v-btn>
           </v-toolbar>
 
           <v-card-text class="pa-6" style="max-height: 80vh; overflow-y: auto;">
-            <!-- ตั้งค่าการเชื่อมต่อ GitHub API (ซ่อน/เปิดได้) -->
-            <v-expansion-panels class="mb-4">
+            <!-- ตั้งค่า GitHub API (เฉพาะตอนสร้างใหม่หรือต้องการตั้งค่า) -->
+            <v-expansion-panels class="mb-4" v-if="!isEditing">
               <v-expansion-panel elevation="0" style="border: 1px solid #cbd5e1; border-radius: 10px;">
                 <v-expansion-panel-title class="text-caption font-weight-bold" style="color: #001941;">
                   <v-icon icon="mdi-cog-outline" size="18" class="mr-2"></v-icon>
@@ -340,14 +346,14 @@
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
                   <div class="text-caption text-grey-darken-2 mb-3">
-                    หากกรอกข้อมูลด้านล่าง เมื่อกดโพสต์ ระบบจะส่งไฟล์ <code>.jpg</code> เข้าไปในโฟลเดอร์ <code>posters/</code> บน GitHub Repo ของคุณให้ทันที (หากเว้นว่างไว้ ระบบจะทำงานผ่านเครื่องคุณแทน)
+                    หากกรอกข้อมูลด้านล่าง เมื่อกดโพสต์ ระบบจะส่งไฟล์ <code>.jpg</code> เข้าไปในโฟลเดอร์ <code>posters/</code> บน GitHub Repo ให้ทันที
                   </div>
                   <v-row dense>
                     <v-col cols="12" sm="6">
-                      <v-text-field v-model="ghConfig.owner" label="ชื่อผู้ใช้ GitHub (Owner)" placeholder="เช่น phonphiphat" variant="outlined" density="compact"></v-text-field>
+                      <v-text-field v-model="ghConfig.owner" label="ชื่อผู้ใช้ GitHub (Owner)" placeholder="เช่น bab-web" variant="outlined" density="compact"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6">
-                      <v-text-field v-model="ghConfig.repo" label="ชื่อ Repository" placeholder="เช่น pr-poster-board" variant="outlined" density="compact"></v-text-field>
+                      <v-text-field v-model="ghConfig.repo" label="ชื่อ Repository" placeholder="เช่น bab-web.github.io" variant="outlined" density="compact"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="4">
                       <v-text-field v-model="ghConfig.branch" label="Branch" placeholder="main" variant="outlined" density="compact"></v-text-field>
@@ -406,7 +412,7 @@
 
             <!-- อัปโหลดไฟล์รูป JPG -->
             <v-file-input
-              label="เลือกไฟล์โปสเตอร์ .JPG (แนวตั้งหรือแนวนอน) *"
+              label="เปลี่ยนไฟล์โปสเตอร์ .JPG (หากต้องการเปลี่ยนรูปใหม่)"
               accept="image/jpeg, image/jpg, image/png"
               prepend-icon="mdi-file-jpg-box"
               variant="outlined" density="comfortable" class="mt-4 mb-2"
@@ -415,7 +421,7 @@
 
             <div v-if="newPost.imagePreview" class="mb-4 text-center pa-3 rounded-lg" style="background-color: #e5e6e7;">
               <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-caption font-weight-bold" style="color: #001941;">พรีวิวไฟล์: {{ newPost.fileName }}</span>
+                <span class="text-caption font-weight-bold" style="color: #001941;">พรีวิวรูปภาพ</span>
                 <v-chip size="x-small" color="#001941" variant="flat" class="text-white">
                   {{ newPost.orientation === 'portrait' ? 'แนวตั้ง (Portrait)' : 'แนวนอน (Landscape)' }}
                 </v-chip>
@@ -425,19 +431,25 @@
 
             <!-- รายละเอียดด้านในโพสต์ -->
             <v-textarea
-              v-model="newPost.description" label="รายละเอียดด้านในโพสต์ (แสดงเมื่อกดคลิกเข้าไปดู)"
+              v-model="newPost.description" label="รายละเอียดด้านในโพสต์"
               variant="outlined" rows="3"
             ></v-textarea>
           </v-card-text>
 
           <v-card-actions class="px-6 pb-5 pt-0 justify-space-between">
-            <v-btn variant="tonal" color="#001941" size="small" class="text-none" prepend-icon="mdi-code-json" @click="exportJsonFile">
-              ดาวน์โหลด posts.json (สำหรับ VS Code)
-            </v-btn>
+            <!-- ปุ่มลบโพสต์ (แสดงเฉพาะตอนอยู่ในโหมดแก้ไข) -->
+            <div>
+              <v-btn v-if="isEditing" color="error" variant="elevated" size="small" class="text-none" prepend-icon="mdi-delete" @click="deletePost(newPost.id)">
+                ลบโพสต์นี้
+              </v-btn>
+              <v-btn v-else variant="tonal" color="#001941" size="small" class="text-none" prepend-icon="mdi-code-json" @click="exportJsonFile">
+                ดาวน์โหลด posts.json
+              </v-btn>
+            </div>
             <div>
               <v-btn variant="text" class="text-none mr-2" @click="closePostDialog">ยกเลิก</v-btn>
-              <v-btn color="#001941" variant="elevated" class="text-none text-white px-6 font-weight-bold" prepend-icon="mdi-cloud-upload" :loading="isSaving" @click="savePost">
-                บันทึกและโพสต์
+              <v-btn color="#001941" variant="elevated" class="text-none text-white px-6 font-weight-bold" prepend-icon="mdi-check" :loading="isSaving" @click="savePost">
+                {{ isEditing ? 'บันทึกการแก้ไข' : 'บันทึกและโพสต์' }}
               </v-btn>
             </div>
           </v-card-actions>
@@ -461,19 +473,14 @@
     createApp({
       data() {
         return {
-          ADMIN_PIN: '1234', // รหัสผ่านก่อนเข้าหน้าโพสต์
+          ADMIN_PIN: '1234', // รหัสผ่านผู้ดูแล
           isAuthenticated: false,
           authDialog: false,
           passwordInput: '',
           authError: '',
+          authActionType: 'create', // 'create' หรือ 'edit'
 
-          // ค่าเริ่มต้นสำหรับการเชื่อมต่อ GitHub Repository
-          ghConfig: {
-            owner: '',
-            repo: '',
-            branch: 'main',
-            token: ''
-          },
+          ghConfig: { owner: '', repo: '', branch: 'main', token: '' },
 
           latestPopup: false,
           carouselIndex: 0,
@@ -481,6 +488,7 @@
           activePost: null,
 
           postDialog: false,
+          isEditing: false,
           isSaving: false,
           showNewCategoryBox: false,
 
@@ -489,13 +497,16 @@
 
           newCategory: { name: '', color: '#ff5252' },
           newPost: {
+            id: null,
             title: '',
             category: 'Activity & Event',
             description: '',
             imagePreview: '',
             base64Content: '',
             fileName: '',
-            orientation: 'landscape'
+            orientation: 'landscape',
+            views: 1,
+            date: ''
           },
 
           snackbar: { show: false, text: '', color: '#001941' },
@@ -536,7 +547,6 @@
       },
 
       methods: {
-        // 1. พยายามดึงไฟล์ posts.json จากใน GitHub Repo ก่อน ถ้าไม่มีค่อยดึงจาก LocalStorage
         async loadData() {
           try {
             const res = await fetch('./posts.json?t=' + Date.now());
@@ -546,9 +556,7 @@
               if (data.posts) this.posts = data.posts;
               return;
             }
-          } catch (e) {
-            // กรณีรันในเครื่องหรือยังไม่มีไฟล์ posts.json บน GitHub
-          }
+          } catch (e) {}
 
           const savedCategories = localStorage.getItem('pr_poster_categories_v2');
           if (savedCategories) this.categories = JSON.parse(savedCategories);
@@ -601,7 +609,6 @@
           const file = event.target.files[0];
           if (!file) return;
 
-          // ตั้งชื่อไฟล์ใหม่ให้เป็นระเบียบ เช่น poster_1730280000.jpg
           const cleanName = `poster_${Date.now()}.jpg`;
           this.newPost.fileName = cleanName;
 
@@ -610,21 +617,17 @@
             const img = new Image();
             img.onload = () => {
               this.newPost.orientation = img.height >= img.width ? 'portrait' : 'landscape';
-
               const maxDim = 1280;
               let w = img.width, h = img.height;
               if (w > maxDim || h > maxDim) {
                 if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
                 else { w = Math.round((w * maxDim) / h); h = maxDim; }
               }
-
               const canvas = document.createElement('canvas');
               canvas.width = w; canvas.height = h;
               canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
               const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
               this.newPost.imagePreview = dataUrl;
-              // ตัด Header ออกเพื่อให้เหลือเฉพาะ Base64 สำหรับส่งเข้า GitHub API
               this.newPost.base64Content = dataUrl.split(',')[1];
             };
             img.src = e.target.result;
@@ -632,44 +635,92 @@
           reader.readAsDataURL(file);
         },
 
-        // ฟังก์ชันอัปโหลดไฟล์เข้า GitHub Repository โดยตรงผ่าน API
         async uploadFileToGitHub(filePath, base64Content, commitMessage) {
-          const { owner, repo, branch, token } = this.ghConfig;
+          const owner = (this.ghConfig.owner || '').trim();
+          const repo = (this.ghConfig.repo || '').trim().replace(/\/$/, '');
+          const branch = (this.ghConfig.branch || 'main').trim();
+          const token = (this.ghConfig.token || '').trim();
           const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-          // เช็คว่ามีไฟล์ชื่อเดิมอยู่แล้วหรือไม่ (เพื่อเอาค่า sha มาอัปเดตทับ)
           let sha = null;
           const checkRes = await fetch(`${apiUrl}?ref=${branch}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
           });
           if (checkRes.ok) {
             const existing = await checkRes.json();
             sha = existing.sha;
           }
 
-          const body = {
-            message: commitMessage,
-            content: base64Content,
-            branch: branch || 'main'
-          };
+          const body = { message: commitMessage, content: base64Content, branch: branch };
           if (sha) body.sha = sha;
 
           const res = await fetch(apiUrl, {
             method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
+            headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
-
           if (!res.ok) throw new Error('อัปโหลดขึ้น GitHub ไม่สำเร็จ กรุณาเช็ค Token หรือชื่อ Repo');
           return await res.json();
         },
 
+        openPostAuth() {
+          this.authActionType = 'create';
+          if (this.isAuthenticated) {
+            this.isEditing = false;
+            this.closePostDialog();
+            this.postDialog = true;
+          } else {
+            this.passwordInput = ''; this.authError = ''; this.authDialog = true;
+          }
+        },
+
+        openEditDialog(post) {
+          this.authActionType = 'edit';
+          this.activePostToEdit = post;
+          if (this.isAuthenticated) {
+            this.setupEditForm(post);
+          } else {
+            this.passwordInput = ''; this.authError = ''; this.authDialog = true;
+          }
+        },
+
+        setupEditForm(post) {
+          this.isEditing = true;
+          this.newPost = {
+            id: post.id,
+            title: post.title,
+            category: post.category,
+            description: post.description,
+            imagePreview: post.image,
+            base64Content: '',
+            fileName: '',
+            orientation: post.orientation || 'landscape',
+            views: post.views || 1,
+            date: post.date
+          };
+          this.detailDialog = false;
+          this.postDialog = true;
+        },
+
+        verifyPassword() {
+          if (this.passwordInput === this.ADMIN_PIN) {
+            this.isAuthenticated = true; 
+            this.authDialog = false; 
+            if (this.authActionType === 'edit') {
+              this.setupEditForm(this.activePostToEdit);
+            } else {
+              this.isEditing = false;
+              this.closePostDialog();
+              this.postDialog = true;
+            }
+          } else { 
+            this.authError = 'รหัสผ่านไม่ถูกต้อง'; 
+          }
+        },
+
         async savePost() {
-          if (!this.newPost.title.trim() || !this.newPost.imagePreview) {
-            this.showToast('กรุณากรอกไตเติลและเลือกไฟล์รูป .jpg', 'error');
+          if (!this.newPost.title.trim()) {
+            this.showToast('กรุณากรอกไตเติลของโพสต์', 'error');
             return;
           }
 
@@ -677,40 +728,46 @@
           let finalImageUrl = this.newPost.imagePreview;
 
           try {
-            // ถ้าตั้งค่า GitHub API ไว้ ให้ส่งรูป .jpg เข้าโฟลเดอร์ posters/ บน GitHub ทันที
-            if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
+            if (this.newPost.base64Content && this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
               const imagePath = `posters/${this.newPost.fileName}`;
-              await this.uploadFileToGitHub(
-                imagePath,
-                this.newPost.base64Content,
-                `Upload poster: ${this.newPost.fileName}`
-              );
-              // อ้างอิง Path รูปจากใน GitHub Repo โดยตรง
+              await this.uploadFileToGitHub(imagePath, this.newPost.base64Content, `Upload poster: ${this.newPost.fileName}`);
               finalImageUrl = `./${imagePath}`;
             }
 
-            const postData = {
-              id: Date.now(),
-              title: this.newPost.title.trim(),
-              category: this.newPost.category,
-              description: this.newPost.description.trim(),
-              image: finalImageUrl,
-              orientation: this.newPost.orientation,
-              views: 1,
-              date: new Date().toISOString()
-            };
+            if (this.isEditing) {
+              // โหมดแก้ไขโพสต์เดิม
+              const idx = this.posts.findIndex(p => p.id === this.newPost.id);
+              if (idx !== -1) {
+                this.posts[idx].title = this.newPost.title.trim();
+                this.posts[idx].category = this.newPost.category;
+                this.posts[idx].description = this.newPost.description.trim();
+                this.posts[idx].image = finalImageUrl;
+                this.posts[idx].orientation = this.newPost.orientation;
+              }
+              this.showToast('แก้ไขโพสต์เรียบร้อยแล้ว');
+            } else {
+              // โหมดสร้างโพสต์ใหม่
+              const postData = {
+                id: Date.now(),
+                title: this.newPost.title.trim(),
+                category: this.newPost.category,
+                description: this.newPost.description.trim(),
+                image: finalImageUrl,
+                orientation: this.newPost.orientation,
+                views: 1,
+                date: new Date().toISOString()
+              };
+              this.posts.unshift(postData);
+              this.showToast('บันทึกโพสต์ใหม่เรียบร้อยแล้ว');
+            }
 
-            this.posts.unshift(postData);
-
-            // ถ้าเชื่อมต่อ GitHub ไว้ ให้อัปเดตไฟล์ฐานข้อมูล posts.json บน GitHub ด้วยเลย
+            // ซิงค์ข้อมูลขึ้น GitHub หรือ LocalStorage
             if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
               const dbJson = JSON.stringify({ categories: this.categories, posts: this.posts }, null, 2);
               const dbBase64 = btoa(unescape(encodeURIComponent(dbJson)));
-              await this.uploadFileToGitHub('posts.json', dbBase64, `Add post: ${postData.title}`);
-              this.showToast('อัปโหลดรูป .JPG และบันทึกข้อมูลลง GitHub สำเร็จ!');
+              await this.uploadFileToGitHub('posts.json', dbBase64, `Update posts.json`);
             } else {
               localStorage.setItem('pr_poster_items_v2', JSON.stringify(this.posts));
-              this.showToast('บันทึกโพสต์เรียบร้อยแล้ว');
             }
 
             this.closePostDialog();
@@ -721,15 +778,29 @@
           }
         },
 
-        // ดาวน์โหลดไฟล์ posts.json ไปวางใน VS Code แล้ว Push ขึ้น GitHub ด้วยตัวเอง
+        deletePost(id) {
+          if (!confirm('ยืนยันการลบโปสเตอร์นี้ใช่หรือไม่?')) return;
+          this.posts = this.posts.filter(p => p.id !== id);
+          
+          if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
+            const dbJson = JSON.stringify({ categories: this.categories, posts: this.posts }, null, 2);
+            const dbBase64 = btoa(unescape(encodeURIComponent(dbJson)));
+            this.uploadFileToGitHub('posts.json', dbBase64, `Delete post id: ${id}`).catch(console.error);
+          } else {
+            localStorage.setItem('pr_poster_items_v2', JSON.stringify(this.posts));
+          }
+
+          this.closePostDialog();
+          this.detailDialog = false;
+          this.showToast('ลบโปสเตอร์เรียบร้อยแล้ว', 'error');
+        },
+
         exportJsonFile() {
           const dataStr = JSON.stringify({ categories: this.categories, posts: this.posts }, null, 2);
           const blob = new Blob([dataStr], { type: 'application/json' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
-          a.download = 'posts.json';
-          a.click();
+          a.href = url; a.download = 'posts.json'; a.click();
         },
 
         createDemoPoster(heading, subtitle, accentColor, orientation) {
@@ -769,15 +840,6 @@
           this.latestPopup = false;
           this.openDetail(post);
         },
-        openPostAuth() {
-          if (this.isAuthenticated) this.postDialog = true;
-          else { this.passwordInput = ''; this.authError = ''; this.authDialog = true; }
-        },
-        verifyPassword() {
-          if (this.passwordInput === this.ADMIN_PIN) {
-            this.isAuthenticated = true; this.authDialog = false; this.postDialog = true;
-          } else { this.authError = 'รหัสผ่านไม่ถูกต้อง'; }
-        },
         addCustomCategory() {
           const name = this.newCategory.name.trim();
           if (!name) return;
@@ -790,10 +852,10 @@
           this.showNewCategoryBox = false;
         },
         closePostDialog() {
-          this.postDialog = false;
+          this.postDialog = this.isEditing = false;
           this.newPost = {
-            title: '', category: this.categories[0]?.name || 'Activity & Event',
-            description: '', imagePreview: '', base64Content: '', fileName: '', orientation: 'landscape'
+            id: null, title: '', category: this.categories[0]?.name || 'Activity & Event',
+            description: '', imagePreview: '', base64Content: '', fileName: '', orientation: 'landscape', views: 1, date: ''
           };
         },
         showToast(text, color = '#001941') {
