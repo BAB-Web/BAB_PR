@@ -209,7 +209,7 @@
 
           <v-card v-else class="pa-12 text-center rounded-xl" elevation="0" color="transparent">
             <v-icon icon="mdi-image-off-outline" size="72" color="#001941" class="mb-3 opacity-50"></v-icon>
-            <div class="text-h6 font-weight-bold" style="color: #001941;">ไม่พบโปสเตอร์ในหมวดหมู่นี้</div>
+            <div class="text-h6 font-weight-bold" style="color: #001941;"> </div>
           </v-card>
         </v-container>
       </v-main>
@@ -328,9 +328,8 @@
       <v-dialog v-model="postDialog" max-width="700" persistent>
         <v-card class="rounded-xl">
           <v-toolbar color="#001941" density="comfortable" class="px-2">
-            <v-icon :icon="isEditing ? 'mdi-pencil' : 'mdi-github'" color="white" class="mr-2"></v-icon>
             <v-toolbar-title class="font-weight-bold text-white text-subtitle-1">
-              {{ isEditing ? 'แก้ไขข้อมูลโปสเตอร์' : 'ลงประกาศโปสเตอร์ใหม่ (GitHub Storage)' }}
+              {{ isEditing ? 'แก้ไขข้อมูล' : 'Post' }}
             </v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon="mdi-close" variant="text" color="white" @click="closePostDialog"></v-btn>
@@ -779,7 +778,7 @@
         },
 
         deletePost(id) {
-          if (!confirm('ยืนยันการลบโปสเตอร์นี้ใช่หรือไม่?')) return;
+          if (!confirm('ยืนยันการลบใช่หรือไม่?')) return;
           this.posts = this.posts.filter(p => p.id !== id);
           
           if (this.ghConfig.owner && this.ghConfig.repo && this.ghConfig.token) {
@@ -792,7 +791,7 @@
 
           this.closePostDialog();
           this.detailDialog = false;
-          this.showToast('ลบโปสเตอร์เรียบร้อยแล้ว', 'error');
+          this.showToast('ลบเรียบร้อยแล้ว', 'error');
         },
 
         exportJsonFile() {
